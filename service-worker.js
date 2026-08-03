@@ -1,10 +1,10 @@
-const CACHE_NAME = "serial-generator-v1";
+const CACHE_NAME = "serial-generator-integrated-v1";
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./icon-192.svg",
-  "./icon-512.svg"
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 self.addEventListener("install", event => {
@@ -23,12 +23,14 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   event.respondWith(
-    caches.match(event.request).then(cached =>
-      cached || fetch(event.request).then(response => {
+    fetch(event.request)
+      .then(response => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         return response;
-      }).catch(() => caches.match("./index.html"))
-    )
+      })
+      .catch(() =>
+        caches.match(event.request).then(response => response || caches.match("./index.html"))
+      )
   );
 });

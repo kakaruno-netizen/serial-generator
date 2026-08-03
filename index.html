@@ -1,27 +1,27 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#1769e0">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Serial Generator">
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="apple-touch-icon" href="./icon-192.svg">
+  <link rel="apple-touch-icon" href="./icon-192.png">
   <title>Serial Generator</title>
   <style>
     :root {
       color-scheme: light dark;
-      --bg:#f2f5f9; --card:#fff; --text:#15171a; --sub:#69717d;
+      --bg:#f2f5f9; --card:#ffffff; --text:#15171a; --sub:#68707b;
       --line:#d9dee7; --accent:#1769e0; --accent2:#0f56be;
-      --result:#eef5ff; --error:#c62828; --disabled:#a9b0ba;
+      --result:#eef5ff; --error:#c62828; --ok:#1b7f3a;
     }
     @media(prefers-color-scheme:dark){
       :root{
         --bg:#0f1217; --card:#1a1f26; --text:#f4f6f9; --sub:#adb5c0;
         --line:#39414c; --accent:#5b9cff; --accent2:#7aafff;
-        --result:#14243b; --error:#ff7c7c; --disabled:#626975;
+        --result:#14243b; --error:#ff7c7c; --ok:#72d995;
       }
     }
     *{box-sizing:border-box}
@@ -30,239 +30,325 @@
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom));
     }
-    .app{max-width:520px;margin:0 auto}
-    header{padding:10px 4px 18px}
-    h1{margin:0;font-size:27px;letter-spacing:-.6px}
-    .subtitle{margin:8px 0 0;color:var(--sub);font-size:14px;line-height:1.5}
+    .wrap{max-width:520px;margin:0 auto}
+    .hidden{display:none!important}
     .card{
       background:var(--card); border:1px solid var(--line); border-radius:22px;
-      padding:20px; box-shadow:0 14px 40px rgba(0,0,0,.1)
+      padding:22px; box-shadow:0 14px 40px rgba(0,0,0,.11);
     }
-    label{display:block;font-weight:750;font-size:14px;margin:0 0 8px}
-    select,input{
-      width:100%;border:1px solid var(--line);border-radius:14px;
-      background:transparent;color:var(--text);padding:15px 16px;
-      font-size:18px;outline:none
+    h1{margin:0;font-size:27px;letter-spacing:-.6px}
+    .sub{margin:8px 0 22px;color:var(--sub);font-size:14px;line-height:1.5}
+    label{display:block;font-size:14px;font-weight:800;margin:0 0 8px}
+    input,select{
+      width:100%; border:1px solid var(--line); border-radius:14px;
+      padding:15px 16px; background:transparent; color:var(--text);
+      font-size:18px; outline:none;
     }
-    input{
-      margin-top:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      font-size:23px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase
-    }
-    select:focus,input:focus{
+    input:focus,select:focus{
       border-color:var(--accent);
-      box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent)
+      box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent);
+    }
+    .mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:23px; font-weight:850; letter-spacing:1.4px; text-transform:uppercase;
     }
     .field{margin-bottom:17px}
     button{
-      width:100%;border:0;border-radius:14px;padding:15px 16px;
-      font-size:17px;font-weight:850;cursor:pointer;-webkit-tap-highlight-color:transparent
+      width:100%; border:0; border-radius:14px; padding:15px 16px;
+      background:var(--accent); color:white; font-size:17px; font-weight:850;
+      cursor:pointer; -webkit-tap-highlight-color:transparent;
     }
-    .primary{background:var(--accent);color:#fff}
-    .primary:active{background:var(--accent2)}
-    .primary:disabled{background:var(--disabled);cursor:not-allowed}
+    button:active{background:var(--accent2)}
+    .ghost{
+      width:auto; background:transparent; color:var(--accent);
+      border:1px solid var(--accent); padding:10px 13px; font-size:14px;
+    }
     .result-box{
-      margin-top:20px;padding:18px;border-radius:16px;background:var(--result);
-      border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line))
+      margin-top:20px; padding:18px; border-radius:16px; background:var(--result);
+      border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));
     }
     .result-title{font-size:13px;color:var(--sub);margin-bottom:8px}
     .result-row{display:flex;align-items:center;gap:10px}
     #result{
-      flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      font-size:28px;font-weight:900;letter-spacing:1.6px;overflow-wrap:anywhere
+      flex:1; min-width:0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:28px; font-weight:900; letter-spacing:1.6px; overflow-wrap:anywhere;
     }
-    .copy{
-      width:auto;background:transparent;color:var(--accent);
-      border:1px solid var(--accent);padding:10px 13px;font-size:14px;white-space:nowrap
-    }
-    #message{min-height:20px;margin-top:10px;font-size:13px;color:var(--sub)}
-    #message.error{color:var(--error)}
+    .msg{min-height:20px;margin-top:10px;font-size:13px;color:var(--sub)}
+    .msg.error{color:var(--error)}
+    .msg.ok{color:var(--ok)}
     .note{
       margin-top:16px;padding:14px;border:1px dashed var(--line);border-radius:14px;
-      color:var(--sub);font-size:13px;line-height:1.55
+      color:var(--sub);font-size:13px;line-height:1.55;
     }
-    .install{
-      display:none;margin-top:13px;background:transparent;color:var(--accent);
-      border:1px solid var(--accent)
-    }
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .logout{width:auto;padding:9px 12px;font-size:13px;background:transparent;color:var(--accent);border:1px solid var(--accent)}
     footer{padding:18px 5px;color:var(--sub);font-size:12px;line-height:1.5}
   </style>
 </head>
 <body>
-  <main class="app">
-    <header>
-      <h1>Serial Generator</h1>
-      <p class="subtitle">생성기를 선택하고 PC Serial/PN을 입력하세요.</p>
-    </header>
+  <main class="wrap">
+    <section id="loginView" class="card">
+      <h1>🔒 Serial Generator</h1>
+      <p class="sub">비밀번호를 입력해야 생성기를 사용할 수 있습니다.</p>
 
-    <section class="card">
+      <div class="field">
+        <label for="password">비밀번호</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="비밀번호 입력">
+      </div>
+
+      <button id="loginBtn" type="button">로그인</button>
+      <div id="loginMsg" class="msg"></div>
+    </section>
+
+    <section id="appView" class="card hidden">
+      <div class="topbar">
+        <div>
+          <h1>Serial Generator</h1>
+          <div class="sub" style="margin-bottom:0">생성기를 선택하고 PN을 입력하세요.</div>
+        </div>
+        <button id="logoutBtn" class="logout" type="button">로그아웃</button>
+      </div>
+
       <div class="field">
         <label for="generator">생성기</label>
-        <select id="generator"></select>
+        <select id="generator">
+          <option value="bellsys">BellSys</option>
+          <option value="kepco">Kepco</option>
+        </select>
       </div>
 
       <div class="field">
         <label for="serial">PC Serial / PN</label>
-        <input id="serial" type="text" inputmode="text" maxlength="8"
-               autocomplete="off" autocapitalize="characters" spellcheck="false"
-               placeholder="예: 354D04FA">
+        <input id="serial" class="mono" type="text" inputmode="text"
+               autocomplete="off" autocapitalize="characters" spellcheck="false">
       </div>
 
-      <button id="generateBtn" class="primary" type="button">인증코드 생성</button>
+      <button id="generateBtn" type="button">인증코드 생성</button>
 
       <section class="result-box" aria-live="polite">
         <div class="result-title">인증코드</div>
         <div class="result-row">
           <div id="result">--------</div>
-          <button id="copyBtn" class="copy" type="button">복사</button>
+          <button id="copyBtn" class="ghost" type="button">복사</button>
         </div>
-        <div id="message"></div>
+        <div id="message" class="msg"></div>
       </section>
 
-      <button id="installBtn" class="install" type="button">홈 화면에 설치</button>
-
-      <div class="note" id="generatorNote"></div>
+      <div id="generatorNote" class="note"></div>
     </section>
 
     <footer>
-      HTTPS 주소로 최초 1회 접속 후 홈 화면에 추가하면 앱처럼 실행할 수 있습니다.
-      BellSys는 현재 사용 가능하며, 다른 생성기는 계산식 추가 후 활성화됩니다.
+      최초 접속 후 Safari에서 홈 화면에 추가하면 앱처럼 실행할 수 있습니다.
     </footer>
   </main>
 
 <script>
 "use strict";
 
-const generators = [
-  {
-    id: "bellsys",
-    name: "BellSys",
-    enabled: true,
+const PASSWORD_HASH = "82bc8d9111455b8bd7ee2629f692d8bb4af2b97d8d81138df62f451277b57308";
+const SESSION_KEY = "serial_generator_login";
+const LOCK_UNTIL_KEY = "serial_generator_lock_until";
+const FAIL_COUNT_KEY = "serial_generator_fail_count";
+const MAX_FAILS = 5;
+const LOCK_MS = 5 * 60 * 1000;
+
+const loginView = document.getElementById("loginView");
+const appView = document.getElementById("appView");
+const passwordEl = document.getElementById("password");
+const loginMsg = document.getElementById("loginMsg");
+
+async function sha256(text) {
+  const data = new TextEncoder().encode(text);
+  const digest = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(digest))
+    .map(v => v.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+function showApp() {
+  loginView.classList.add("hidden");
+  appView.classList.remove("hidden");
+  passwordEl.value = "";
+}
+
+function showLogin() {
+  appView.classList.add("hidden");
+  loginView.classList.remove("hidden");
+}
+
+async function login() {
+  const now = Date.now();
+  const lockUntil = Number(localStorage.getItem(LOCK_UNTIL_KEY) || "0");
+
+  loginMsg.className = "msg";
+
+  if (lockUntil > now) {
+    const seconds = Math.ceil((lockUntil - now) / 1000);
+    loginMsg.textContent = `입력이 잠겼습니다. ${seconds}초 후 다시 시도하세요.`;
+    loginMsg.classList.add("error");
+    return;
+  }
+
+  const entered = passwordEl.value;
+  if (!entered) {
+    loginMsg.textContent = "비밀번호를 입력해 주세요.";
+    loginMsg.classList.add("error");
+    return;
+  }
+
+  if (await sha256(entered) === PASSWORD_HASH) {
+    sessionStorage.setItem(SESSION_KEY, "1");
+    localStorage.removeItem(FAIL_COUNT_KEY);
+    localStorage.removeItem(LOCK_UNTIL_KEY);
+    loginMsg.textContent = "";
+    showApp();
+    return;
+  }
+
+  let failCount = Number(localStorage.getItem(FAIL_COUNT_KEY) || "0") + 1;
+
+  if (failCount >= MAX_FAILS) {
+    localStorage.setItem(LOCK_UNTIL_KEY, String(Date.now() + LOCK_MS));
+    localStorage.setItem(FAIL_COUNT_KEY, "0");
+    loginMsg.textContent = "5회 실패하여 5분 동안 입력이 잠겼습니다.";
+  } else {
+    localStorage.setItem(FAIL_COUNT_KEY, String(failCount));
+    loginMsg.textContent = `비밀번호가 올바르지 않습니다. (${failCount}/${MAX_FAILS})`;
+  }
+
+  loginMsg.classList.add("error");
+}
+
+document.getElementById("loginBtn").addEventListener("click", login);
+passwordEl.addEventListener("keydown", event => {
+  if (event.key === "Enter") login();
+});
+
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  showLogin();
+});
+
+const generators = {
+  bellsys: {
     inputLength: 8,
-    note: "BellSys_Serial_NEW_V1 계산식이 적용되어 있습니다.",
-    calculate(sn) {
+    output: "hex",
+    placeholder: "예: 354D04FA",
+    note: "BellSys: 8자리 HEX 입력 → 8자리 HEX 인증코드 출력",
+    calculate(text) {
+      let sn = Number.parseInt(text, 16) >>> 0;
       let code = (sn ^ 0x5A3F91C7) >>> 0;
       code = (Math.imul(code, 2654435761) + 0x1234567B) >>> 0;
       code = (code ^ (code >>> 16)) >>> 0;
       code = Math.imul(code, 0x85EBCA6B) >>> 0;
       code = (code ^ (code >>> 13)) >>> 0;
-      return code >>> 0;
+      return code.toString(16).toUpperCase().padStart(8, "0");
     }
   },
-  {
-    id: "kepco",
-    name: "Kepco",
-    enabled: false,
-    inputLength: 8,
-    note: "Kepco 생성기는 계산식 확인 후 이 메뉴에 바로 추가할 수 있습니다."
+  kepco: {
+    inputLength: 10,
+    output: "decimal",
+    placeholder: "예: 0011223344",
+    note: "Kepco: 2자리씩 5개 합산 후 (합계 × 1024) << 1, 10진수 출력",
+    calculate(text) {
+      let sum = 0;
+      for (let i = 0; i < 5; i++) {
+        sum += Number.parseInt(text.slice(i * 2, i * 2 + 2), 16);
+      }
+      return String((sum * 1024) << 1);
+    }
   }
-];
+};
 
 const generatorEl = document.getElementById("generator");
 const serialEl = document.getElementById("serial");
 const resultEl = document.getElementById("result");
 const messageEl = document.getElementById("message");
-const generateBtn = document.getElementById("generateBtn");
 const noteEl = document.getElementById("generatorNote");
-const installBtn = document.getElementById("installBtn");
-
-for (const g of generators) {
-  const option = document.createElement("option");
-  option.value = g.id;
-  option.textContent = g.enabled ? g.name : `${g.name} (준비 중)`;
-  generatorEl.appendChild(option);
-}
 
 function currentGenerator() {
-  return generators.find(g => g.id === generatorEl.value);
+  return generators[generatorEl.value];
 }
-function toHex8(value) {
-  return (value >>> 0).toString(16).toUpperCase().padStart(8, "0");
-}
-function normalizeInput() {
+
+function normalizeSerial() {
   const g = currentGenerator();
-  serialEl.value = serialEl.value.toUpperCase().replace(/[^0-9A-F]/g, "").slice(0, g.inputLength);
+  serialEl.value = serialEl.value
+    .toUpperCase()
+    .replace(/[^0-9A-F]/g, "")
+    .slice(0, g.inputLength);
 }
+
 function updateGeneratorUI() {
   const g = currentGenerator();
   serialEl.maxLength = g.inputLength;
+  serialEl.placeholder = g.placeholder;
   noteEl.textContent = g.note;
-  generateBtn.disabled = !g.enabled;
-  generateBtn.textContent = g.enabled ? "인증코드 생성" : "준비 중";
-  resultEl.textContent = "--------";
+  resultEl.textContent = g.output === "decimal" ? "0" : "--------";
   messageEl.textContent = "";
-  normalizeInput();
+  messageEl.className = "msg";
+  normalizeSerial();
 }
+
 function generate() {
   const g = currentGenerator();
-  normalizeInput();
-
-  if (!g.enabled || typeof g.calculate !== "function") {
-    resultEl.textContent = "--------";
-    messageEl.textContent = "이 생성기는 아직 계산식이 등록되지 않았습니다.";
-    messageEl.className = "error";
-    return;
-  }
+  normalizeSerial();
 
   const text = serialEl.value.trim();
   const pattern = new RegExp(`^[0-9A-F]{${g.inputLength}}$`);
+
   if (!pattern.test(text)) {
-    resultEl.textContent = "--------";
-    messageEl.textContent = `${g.inputLength}자리 HEX 값(0-9, A-F)을 입력해 주세요.`;
-    messageEl.className = "error";
+    resultEl.textContent = g.output === "decimal" ? "0" : "--------";
+    messageEl.textContent = `${g.inputLength}자리 HEX 값을 입력해 주세요.`;
+    messageEl.className = "msg error";
     serialEl.focus();
     return;
   }
 
-  const sn = Number.parseInt(text, 16) >>> 0;
-  resultEl.textContent = toHex8(g.calculate(sn));
+  resultEl.textContent = g.calculate(text);
   messageEl.textContent = "생성 완료";
-  messageEl.className = "";
+  messageEl.className = "msg ok";
 }
+
 generatorEl.addEventListener("change", updateGeneratorUI);
-serialEl.addEventListener("input", normalizeInput);
-serialEl.addEventListener("keydown", e => { if (e.key === "Enter") generate(); });
-generateBtn.addEventListener("click", generate);
+serialEl.addEventListener("input", normalizeSerial);
+serialEl.addEventListener("keydown", event => {
+  if (event.key === "Enter") generate();
+});
+document.getElementById("generateBtn").addEventListener("click", generate);
 
 document.getElementById("copyBtn").addEventListener("click", async () => {
   const value = resultEl.textContent;
-  if (!/^[0-9A-F]{8}$/.test(value)) {
+
+  if (value === "--------" || value === "0") {
     messageEl.textContent = "먼저 인증코드를 생성해 주세요.";
-    messageEl.className = "error";
+    messageEl.className = "msg error";
     return;
   }
+
   try {
     await navigator.clipboard.writeText(value);
-    messageEl.textContent = "클립보드에 복사했습니다.";
-    messageEl.className = "";
   } catch {
-    const ta = document.createElement("textarea");
-    ta.value = value;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
     document.execCommand("copy");
-    ta.remove();
-    messageEl.textContent = "클립보드에 복사했습니다.";
-    messageEl.className = "";
+    textarea.remove();
   }
+
+  messageEl.textContent = "클립보드에 복사했습니다.";
+  messageEl.className = "msg ok";
 });
 
-let deferredPrompt = null;
-window.addEventListener("beforeinstallprompt", e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.style.display = "block";
-});
-installBtn.addEventListener("click", async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  installBtn.style.display = "none";
-});
+if (sessionStorage.getItem(SESSION_KEY) === "1") {
+  showApp();
+} else {
+  showLogin();
+}
 
-if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   });
